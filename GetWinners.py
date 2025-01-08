@@ -20,7 +20,7 @@ def raffle_for_burners(snapshot_file="DWL_Burners_snapshot.csv"):
     df = pd.read_csv(snapshot_file)
     
     # Set the random seed
-    np.random.seed(42)
+    np.random.seed(189794)
 
 
     snipers = [
