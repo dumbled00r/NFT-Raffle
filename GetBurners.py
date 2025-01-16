@@ -1,15 +1,12 @@
-
 import os
 from time import sleep
+
 import pandas as pd
-from dune_client.client import DuneClient
-from dune_client.models import (
-    ExecutionState,
-)
 from dotenv import load_dotenv
+from dune_client.client import DuneClient
+from dune_client.models import ExecutionState
 from dune_client.query import QueryBase
 from dune_client.types import QueryParameter
-
 
 load_dotenv()
 DUNE_API_KEY = os.environ["DUNE_KEY"]
@@ -19,8 +16,8 @@ dune = DuneClient(api_key=DUNE_API_KEY)
 QUERY_ID = 4530579  # query id for getting burners https://dune.com/queries/4518440
 
 
-block_number = 24788780  # modify this to snapshot at a specific block number
-burn_address = "0xdead696969dead696969dead696969dead696969"
+block_number = 25121264  # modify this to snapshot at a specific block number
+burn_address = "0x1337000000000000000000000000000000000001"  # burn addy
 token_address = "0x956e1a6b5ff341e38c4e277a03e661a8801806f6"  # $DWL
 
 

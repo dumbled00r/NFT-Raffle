@@ -1,11 +1,12 @@
-from decimal import Decimal
 import math
+import random
+from decimal import Decimal
 
 import numpy as np
 import pandas as pd
 
 
-def raffle_for_burners(snapshot_file="DWL_Burners_snapshot.csv"):
+def raffle_for_burners(snapshot_file="DWL_Burners_snapshot.csv", num_winners=35):
     """
     Conducts a weighted raffle where participants with <1 DWL burned
     have a chance proportional to their burned amount.
@@ -18,61 +19,49 @@ def raffle_for_burners(snapshot_file="DWL_Burners_snapshot.csv"):
         str: Path to the CSV file with the winners.
     """
     df = pd.read_csv(snapshot_file)
-    
-    # Set the random seed
-    np.random.seed(189794)
 
-
-    snipers = [
-        "0xf96Be336D78294633A04b10b97fA78DbFA8841C0", 
-        "0xe7e153717d146a9e93dde0ae12cd5f9ec6137285"
-    ]
-    df = df[~df["sender_address"].isin(snipers)]
-
+    np.random.seed()  # random seed --> you can check the res yourself <3
 
     df["total_burned"] = df["total_burned"].astype(str).apply(Decimal)
     df["total_burned_dwl"] = df["total_burned"] / Decimal(1e18)
 
+    # Get the guaranteed list // those who burned 1 $DWL or more
+    guaranteed_winners = df[df["total_burned_dwl"] >= 1][
+        ["sender_address", "total_burned_dwl"]
+    ]
+    guaranteed_winners["win_type"] = "Guaranteed"
 
-    # get guaranteed list // those who burned 1 $DWL or more
-    guaranteed_winners = df[df["total_burned_dwl"] >= 1]["sender_address"].tolist()
-    # get non-guaranteed list // those who burned less than 1 $DWL
+    # Get the raffle pool (those who burned <= 1 $DWL)
     raffle_pool = df[df["total_burned_dwl"] < 1]
 
-    
-    total_num_winners = math.ceil(sum(raffle_pool["total_burned_dwl"]))
-
+    # Calculate weights for the raffle pool
     weights = raffle_pool["total_burned_dwl"]
-    # normalize weights
     weights = weights / weights.sum()
+
     print(f"Sum of probabilities: {sum(weights)}")
-    winners_index = np.random.choice(
-        raffle_pool.index, size=total_num_winners, replace=False, p=weights
+
+    winners_index = np.random.choice(  # select random winners
+        raffle_pool.index, size=num_winners, replace=False, p=weights
     )
 
-    
+    raffle_winners = raffle_pool.loc[
+        winners_index, ["sender_address", "total_burned_dwl"]
+    ]
 
-    raffle_winners_addresses = raffle_pool.loc[winners_index, "sender_address"].tolist()
+    raffle_winners = raffle_winners.sort_values(
+        by="total_burned_dwl", ascending=False
+    ).reset_index(drop=True)
+    raffle_winners["win_type"] = "FCFS"
+    raffle_winners.loc[:4, "win_type"] = "GTD"
 
-    final_winners = list(guaranteed_winners + raffle_winners_addresses)
-
-    final_winners_df = pd.DataFrame(
-        {
-            "sender_address": final_winners,
-            "total_burned_dwl": [
-                df.loc[df["sender_address"] == addr, "total_burned_dwl"].values[0]
-                for addr in final_winners
-            ],
-            "win_type": [
-                "guaranteed" if addr in guaranteed_winners else "raffle"
-                for addr in final_winners
-            ],
-        }
+    final_winners = (
+        pd.concat([guaranteed_winners, raffle_winners])
+        .sort_values(by="total_burned_dwl", ascending=False)
+        .reset_index(drop=True)
     )
 
-    # Save winners to a CSV file
     output_file = "winners.csv"
-    final_winners_df.to_csv(output_file, index=False)
+    final_winners.to_csv(output_file, index=False)
 
     print(f"Raffle completed. Winners saved to {output_file}.")
     return output_file
