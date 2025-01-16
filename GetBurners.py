@@ -16,7 +16,7 @@ dune = DuneClient(api_key=DUNE_API_KEY)
 QUERY_ID = 4530579  # query id for getting burners https://dune.com/queries/4518440
 
 
-block_number = 25121264  # modify this to snapshot at a specific block number
+block_number = 25127526  # modify this to snapshot at a specific block number
 burn_address = "0x1337000000000000000000000000000000000001"  # burn addy
 token_address = "0x956e1a6b5ff341e38c4e277a03e661a8801806f6"  # $DWL
 
